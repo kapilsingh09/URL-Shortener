@@ -1,61 +1,41 @@
-import { configDotenv } from 'dotenv';
-import express from 'express'
-import { nanoid } from 'nanoid';
-import connectDB from './src/config/mongoConfig.bd.js';
-import urlSchema from './src/model/shorturl.model.js';
-const PORT = 3000
-// configDotenv.config("/env")
+import express from "express";
+import dotenv from "dotenv";
+import connectDB from "./src/config/mongoConfig.bd.js";
+import urlSchema from "./src/model/shorturl.model.js";
+import shortUrlRouter from "./src/routes/shorturl.route.js";
 
-connectDB()
-const app = express()
-app.use(express.json())
-app.use(express.urlencoded({extended:true}))
+// Load environment variables
+dotenv.config();
 
-app.get('/',(req,res)=>{
-    res.send("Hello form the expres")
-})
+const PORT = process.env.PORT || 3000;
 
-app.post('/api/create', async (req, res) => {
-    try {
-        const { url } = req.body;
-        if (!url) {
-            return res.status(400).json({ error: "URL is required" });
-        }
-        const shortUrl = nanoid(9);
+// Connect to MongoDB
+connectDB();
 
-       
-        const newUrl = new urlSchema({
-            full_url: url,      
-            short_url: shortUrl 
-        });
+const app = express();
 
-     
-        await newUrl.save();
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-       
-        res.status(201).json({
-            message: "Short URL created successfully",
-            data: {
-                full_url: newUrl.full_url,
-                short_url: newUrl.short_url
-            }
-        });
-
-    } catch (error) {
-        console.error("Error saving to database:", error);
-        res.status(500).json({ error: "Failed to create short URL" });
-    }
+// Root route
+app.get("/", (req, res) => {
+    res.send("Hello from Express");
 });
 
-app.get('/:id', async (req, res) => {
+// Route 
+app.use("/api/create", shortUrlRouter);
+
+// Redirection route
+app.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        
         const url = await urlSchema.findOne({ short_url: id });
+
         if (url) {
             res.redirect(url.full_url);
         } else {
-            res.status(404).send("not found");
+            res.status(404).send("Short URL not found");
         }
     } catch (error) {
         console.error("Error fetching from database:", error);
@@ -63,6 +43,7 @@ app.get('/:id', async (req, res) => {
     }
 });
 
-app.listen(PORT, ()=>{
-    console.log(`Server is listen on ${PORT}`)
-})
+// Start server
+app.listen(PORT, () => {
+    console.log(`Server is listening on http://localhost:${PORT}`);
+});

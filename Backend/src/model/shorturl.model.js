@@ -3,18 +3,18 @@ import mongoose from "mongoose";
 
 const short_URL_schmea = new mongoose.Schema({
     full_url:{
-        require:true,
+        required:true,
         type:String,
     },
     short_url:{
         type:String,
-        require:true,
+        required:true,
         index:true,
         unique:true
     },
     clicks:{
         type:Number,
-        require:true,
+        required:true,
         default:0,
     },
     user:
